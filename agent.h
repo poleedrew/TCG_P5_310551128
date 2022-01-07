@@ -18,7 +18,7 @@
 #include "action.h"
 #include <fstream>
 #include <functional>
-
+#include <time.h>
 class agent {
 public:
 	agent(const std::string& args = "") {
@@ -74,7 +74,7 @@ protected:
  */
 class player : public random_agent {
 public:
-	player(const std::string& args = "") : random_agent("name=random role=unknown N=0 " + args),
+	player(const std::string& args = "") : random_agent("name=random role=unknown N=0 T=0" + args),
 		space(board::size_x * board::size_y), who(board::empty) {
 		if (name().find_first_of("[]():; ") != std::string::npos)
 			throw std::invalid_argument("invalid name: " + name());
@@ -103,7 +103,22 @@ public:
 			}
 			return take_action();
 		}
-
+		/**
+		 * run MCTS for T milliseconds and retrieve the best action
+		 */
+		action run_mcts_t(size_t T, std::default_random_engine& engine) {
+			double start, end;
+			start = clock();
+			end = clock();
+			while(end - start < T) {
+				std::vector<node*> path = select();
+				node* leaf = path.back()->expand(engine);
+				if (leaf != path.back()) path.push_back(leaf);
+				update(path, leaf->simulate(engine));
+				end = clock();
+			}
+			return take_action();
+		}
 	protected:
 
 		/**
@@ -208,8 +223,9 @@ public:
 
 	virtual action take_action(const board& state) {
 		size_t N = meta["N"];
+		size_t T = meta["T"];
 		if (N) return node(state).run_mcts(N, engine);
-
+		if (T) return node(state).run_mcts_t(T, engine);
 		std::shuffle(space.begin(), space.end(), engine);
 		for (const action::place& move : space) {
 			board after = state;
