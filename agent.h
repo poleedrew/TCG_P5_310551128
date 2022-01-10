@@ -19,6 +19,8 @@
 #include <fstream>
 #include <functional>
 #include <time.h>
+#include <thread>
+#include <unordered_map>
 class agent {
 public:
 	agent(const std::string& args = "") {
@@ -74,7 +76,7 @@ protected:
  */
 class player : public random_agent {
 public:
-	player(const std::string& args = "") : random_agent("name=random role=unknown N=0 T=0" + args),
+	player(const std::string& args = "") : random_agent("name=random role=unknown N=0 T=0 thread=0" + args),
 		space(board::size_x * board::size_y), who(board::empty) {
 		if (name().find_first_of("[]():; ") != std::string::npos)
 			throw std::invalid_argument("invalid name: " + name());
@@ -90,11 +92,12 @@ public:
 	public:
 		node(const board& state, node* parent = nullptr) : board(state),
 			win(0), visit(0), child(), parent(parent) {}
-
+		
 		/**
 		 * run MCTS for N cycles and retrieve the best action
 		 */
 		action run_mcts(size_t N, std::default_random_engine& engine) {
+			
 			for (size_t i = 0; i < N; i++) {
 				std::vector<node*> path = select();
 				node* leaf = path.back()->expand(engine);
@@ -147,7 +150,8 @@ public:
 						[&](const node& node) { return node.info().last_move.i == move; }) != child.end();
 				return is_expanded == false && child_state.place(move) == board::legal;
 			});
-			if (expanded_move == moves.end()) return this; // already terminal
+			if (expanded_move == moves.end())return this; // already terminal
+			move = *expanded_move;
 			child.emplace_back(child_state, this);
 			return &child.back();
 		}
@@ -214,9 +218,10 @@ public:
 			std::shuffle(moves.begin(), moves.end(), engine);
 			return moves;
 		}
-
-	private:
+		
+	public:	
 		size_t win, visit;
+		int move = -1;
 		std::vector<node> child;
 		node* parent;
 	};
@@ -224,8 +229,77 @@ public:
 	virtual action take_action(const board& state) {
 		size_t N = meta["N"];
 		size_t T = meta["T"];
-		if (N) return node(state).run_mcts(N, engine);
-		if (T) return node(state).run_mcts_t(T, engine);
+		size_t thread_num = meta["thread"];
+		auto opponent_type = who == board::black ? board::white: board::black;
+		int opponent_number = 0;
+		for(size_t i=0; i < 9;i++)
+			for (size_t j=0;j<9;j++)
+				if(state[i][j] == opponent_type) opponent_number++;
+		
+		if (opponent_number < 25)T = T * 4;
+		else if(opponent_number < 30)T = T * 1;
+		else T = T * 0.6;
+		
+		
+		if (N){
+			if(thread_num){
+				
+				std::vector<std::thread> t;
+				std::vector<node> roots(thread_num, state);
+				
+				for(size_t i=0; i < thread_num; i++)
+					t.push_back(std::thread(&node::run_mcts, &roots[i], N, std::ref(engine)));
+				
+				for(size_t j=0; j < thread_num; j++)
+					t[j].join();
+				std::unordered_map<int, int> cal;
+				for(size_t i=0; i < thread_num; i++){
+					for(size_t j=0; j < roots[i].child.size(); j++){
+						int index = roots[i].child[j].move;
+						cal[index] += roots[i].child[j].win;
+					}
+				}
+				auto best = cal.begin();
+				for(auto i = cal.begin(); i != cal.end(); i++){
+					
+					if(i->second > best->second){
+						best = i;
+					}
+				}
+				if(best->first != -1) action::place(best->first, this->who);
+			}
+			
+			return node(state).run_mcts(N, engine);
+		} 
+		if (T){
+			if(thread_num){
+				
+				std::vector<std::thread> t;
+				std::vector<node> roots(thread_num, state);
+				
+				for(size_t i=0; i < thread_num; i++)
+					t.push_back(std::thread(&node::run_mcts_t, &roots[i], T, std::ref(engine)));
+				
+				for(size_t j=0; j < thread_num; j++)
+					t[j].join();
+				std::unordered_map<int, int> cal;
+				for(size_t i=0; i < thread_num; i++){
+					for(size_t j=0; j < roots[i].child.size(); j++){
+						int index = roots[i].child[j].move;
+						cal[index] += roots[i].child[j].win;
+					}
+				}
+				auto best = cal.begin();
+				for(auto i = cal.begin(); i != cal.end(); i++){
+					
+					if(i->second > best->second){
+						best = i;
+					}
+				}
+				if(best->first != -1) action::place(best->first, this->who);
+			}
+			return node(state).run_mcts_t(T, engine);
+		} 
 		std::shuffle(space.begin(), space.end(), engine);
 		for (const action::place& move : space) {
 			board after = state;
