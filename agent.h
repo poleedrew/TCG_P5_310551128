@@ -76,7 +76,7 @@ protected:
  */
 class player : public random_agent {
 public:
-	player(const std::string& args = "") : random_agent("name=random role=unknown N=0 T=0 thread=0" + args),
+	player(const std::string& args = "") : random_agent("name=random role=unknown N=0 T=0 thread=0 C=0.3" + args),
 		space(board::size_x * board::size_y), who(board::empty) {
 		if (name().find_first_of("[]():; ") != std::string::npos)
 			throw std::invalid_argument("invalid name: " + name());
@@ -90,16 +90,16 @@ public:
 
 	class node : board {
 	public:
-		node(const board& state, node* parent = nullptr) : board(state),
-			win(0), visit(0), child(), parent(parent) {}
+		node(const board& state, node* parent = nullptr, int position = -1) : board(state),
+			win(0), visit(0), child(), pos_(position), parent(parent) {}
 		
 		/**
 		 * run MCTS for N cycles and retrieve the best action
 		 */
-		action run_mcts(size_t N, std::default_random_engine& engine) {
+		action run_mcts(size_t N, std::default_random_engine& engine, double exploration) {
 			
 			for (size_t i = 0; i < N; i++) {
-				std::vector<node*> path = select();
+				std::vector<node*> path = select(exploration);
 				node* leaf = path.back()->expand(engine);
 				if (leaf != path.back()) path.push_back(leaf);
 				update(path, leaf->simulate(engine));
@@ -109,12 +109,12 @@ public:
 		/**
 		 * run MCTS for T milliseconds and retrieve the best action
 		 */
-		action run_mcts_t(size_t T, std::default_random_engine& engine) {
+		action run_mcts_t(size_t T, std::default_random_engine& engine, double exploration) {
 			double start, end;
 			start = clock();
 			end = clock();
-			while(end - start < T) {
-				std::vector<node*> path = select();
+			while(end - start + 10 < T) {
+				std::vector<node*> path = select(exploration);
 				node* leaf = path.back()->expand(engine);
 				if (leaf != path.back()) path.push_back(leaf);
 				update(path, leaf->simulate(engine));
@@ -128,11 +128,11 @@ public:
 		 * select from the current node to a leaf node by UCB and return all of them
 		 * a leaf node can be either a node that is not fully expanded or a terminal node
 		 */
-		std::vector<node*> select() {
+		std::vector<node*> select(double exploration) {
 			std::vector<node*> path = { this };
 			for (node* ndptr = this; ndptr->is_selectable(); path.push_back(ndptr)) {
 				ndptr = &*std::max_element(ndptr->child.begin(), ndptr->child.end(),
-						[=](const node& lhs, const node& rhs) { return lhs.ucb_score() < rhs.ucb_score(); });
+						[=](const node& lhs, const node& rhs) { return lhs.ucb_score(exploration) < rhs.ucb_score(exploration); });
 			}
 			return path;
 		}
@@ -151,8 +151,7 @@ public:
 				return is_expanded == false && child_state.place(move) == board::legal;
 			});
 			if (expanded_move == moves.end())return this; // already terminal
-			move = *expanded_move;
-			child.emplace_back(child_state, this);
+			child.emplace_back(child_state, this, *expanded_move);
 			return &child.back();
 		}
 
@@ -221,7 +220,7 @@ public:
 		
 	public:	
 		size_t win, visit;
-		int move = -1;
+		int pos_;
 		std::vector<node> child;
 		node* parent;
 	};
@@ -229,16 +228,19 @@ public:
 	virtual action take_action(const board& state) {
 		size_t N = meta["N"];
 		size_t T = meta["T"];
+		double C = meta["C"];
 		size_t thread_num = meta["thread"];
-		auto opponent_type = who == board::black ? board::white: board::black;
-		int opponent_number = 0;
-		for(size_t i=0; i < 9;i++)
-			for (size_t j=0;j<9;j++)
-				if(state[i][j] == opponent_type) opponent_number++;
-		
-		if (opponent_number < 25)T = T * 4;
-		else if(opponent_number < 30)T = T * 1;
-		else T = T * 0.6;
+		// auto opponent_type = who == board::black ? board::white: board::black;
+		// int opponent_number = 0;
+		// for(size_t i=0; i < 9;i++)
+		// 	for (size_t j=0;j<9;j++)
+		// 		if(state[i][j] == opponent_type) opponent_number++;
+		// if(space.size() == 0){
+		// 	return action();
+		// }
+		// if (opponent_number < 25)T = T * 4;
+		// else if(opponent_number < 30)T = T * 1;
+		// else T = T * 0.6;
 		
 		
 		if (N){
@@ -248,28 +250,30 @@ public:
 				std::vector<node> roots(thread_num, state);
 				
 				for(size_t i=0; i < thread_num; i++)
-					t.push_back(std::thread(&node::run_mcts, &roots[i], N, std::ref(engine)));
+					t.push_back(std::thread(&node::run_mcts, &roots[i], N, std::ref(engine), C));
 				
 				for(size_t j=0; j < thread_num; j++)
 					t[j].join();
-				std::unordered_map<int, int> cal;
+				std::unordered_map<int, std::pair<int,int>> cal;
 				for(size_t i=0; i < thread_num; i++){
 					for(size_t j=0; j < roots[i].child.size(); j++){
-						int index = roots[i].child[j].move;
-						cal[index] += roots[i].child[j].win;
+						int index = roots[i].child[j].pos_;
+						cal[index].first += roots[i].child[j].win;
+						cal[index].second += roots[i].child[j].visit;
 					}
 				}
 				auto best = cal.begin();
 				for(auto i = cal.begin(); i != cal.end(); i++){
-					
-					if(i->second > best->second){
+					float mean = i->second.first / i->second.second;
+					float b_mean = best->second.first / best->second.second;
+					if(mean > b_mean){
 						best = i;
 					}
 				}
-				if(best->first != -1) action::place(best->first, this->who);
+				if(best->first != -1) return action::place(best->first, this->who);
 			}
-			
-			return node(state).run_mcts(N, engine);
+			else
+				return node(state).run_mcts(N, engine, C);
 		} 
 		if (T){
 			if(thread_num){
@@ -278,27 +282,40 @@ public:
 				std::vector<node> roots(thread_num, state);
 				
 				for(size_t i=0; i < thread_num; i++)
-					t.push_back(std::thread(&node::run_mcts_t, &roots[i], T, std::ref(engine)));
+					t.push_back(std::thread(&node::run_mcts_t, &roots[i], T, std::ref(engine), C));
 				
 				for(size_t j=0; j < thread_num; j++)
 					t[j].join();
-				std::unordered_map<int, int> cal;
+				std::unordered_map<int, std::pair<int,int>> cal;
 				for(size_t i=0; i < thread_num; i++){
 					for(size_t j=0; j < roots[i].child.size(); j++){
-						int index = roots[i].child[j].move;
-						cal[index] += roots[i].child[j].win;
+						int index = roots[i].child[j].pos_;
+						if(cal.find(index) == cal.end()) {
+							cal[index].first = roots[i].child[j].win;
+							cal[index].second = roots[i].child[j].visit;
+						}else
+						{
+							cal[index].first += roots[i].child[j].win;
+							cal[index].second += roots[i].child[j].visit;
+						}
 					}
 				}
 				auto best = cal.begin();
 				for(auto i = cal.begin(); i != cal.end(); i++){
-					
-					if(i->second > best->second){
-						best = i;
+					if(best->second.second < i->second.second ) best = i;
+					else if(best->second.second == i->second.second){
+						best = best->second.first > i->second.first ? best : i;
 					}
+					// float mean = i->second.second ? i->second.first / i->second.second : i->second.first;
+					// float b_mean = best->second.second ? best->second.first / best->second.second : best->first;
+					// if(mean > b_mean){
+					// 	best = i;
+					// }
 				}
-				if(best->first != -1) action::place(best->first, this->who);
+				if(best->first > -1 && best->first < 81 ) return action::place(best->first, this->who);
 			}
-			return node(state).run_mcts_t(T, engine);
+			else
+				return node(state).run_mcts_t(T, engine, C);
 		} 
 		std::shuffle(space.begin(), space.end(), engine);
 		for (const action::place& move : space) {
