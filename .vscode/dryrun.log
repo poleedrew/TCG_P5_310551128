@@ -1,5 +1,5 @@
 make --dry-run --always-make --keep-going --print-directory
-make: Entering directory '/home/lijuyi/桌面/mcts sample'
-g++ -std=c++11 -O3 -g -Wall -fmessage-length=0 -o nogo nogo.cpp
-make: Leaving directory '/home/lijuyi/桌面/mcts sample'
+make: Entering directory '/home/lijuyi/桌面/TCG_P5_310551128'
+g++ -std=c++11 -O3 -g -Wall -fmessage-length=0 -pthread -o nogo nogo.cpp
+make: Leaving directory '/home/lijuyi/桌面/TCG_P5_310551128'
  

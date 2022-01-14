@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Fri Jan  7 15:01:46 2022
+# Make data base, printed on Thu Jan 13 16:28:46 2022
 
 # Variables
 
@@ -39,7 +39,7 @@ GDMSESSION = ubuntu
 # environment
 XMODIFIERS = @im=ibus
 # makefile
-CURDIR := /home/lijuyi/桌面/mcts sample
+CURDIR := /home/lijuyi/桌面/TCG_P5_310551128
 # makefile
 SHELL = /bin/sh
 # environment
@@ -49,7 +49,7 @@ VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"zh-tw","availableLanguages":{"*":"zh-tw"},"_languagePackId":"87cb300fe93fb847f1b715757ef901ec.zh-tw","_translationsConfigFile":"/home/lijuyi/.config/Code/clp/87cb300fe93fb847f1b715757ef901ec.zh-tw/tcf.json","_cacheRoot":"/home/lijuyi/.config/Code/clp/87cb300fe93fb847f1b715757ef901ec.zh-tw","_resolvedLanguagePackCoreLocation":"/home/lijuyi/.config/Code/clp/87cb300fe93fb847f1b715757ef901ec.zh-tw/899d46d82c4c95423fb7e10e68eba52050e30ba3","_corruptedFile":"/home/lijuyi/.config/Code/clp/87cb300fe93fb847f1b715757ef901ec.zh-tw/corrupted.info","_languagePackSupport":true}
 # environment
-JOURNAL_STREAM = 9:33727
+JOURNAL_STREAM = 9:51362
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -71,11 +71,11 @@ DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
-MANAGERPID = 1769
+MANAGERPID = 1778
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
-VSCODE_CWD = /home/lijuyi
+VSCODE_CWD = /home/lijuyi/桌面/TCG_P5_310551128
 # environment
 GSETTINGS_SCHEMA_DIR = /snap/code/85/usr/share/glib-2.0/schemas
 # default
@@ -85,7 +85,7 @@ PATH = /home/lijuyi/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/lijuyi-Super-Server:@/tmp/.ICE-unix/2176,unix/lijuyi-Super-Server:/tmp/.ICE-unix/2176
+SESSION_MANAGER = local/lijuyi-Super-Server:@/tmp/.ICE-unix/2162,unix/lijuyi-Super-Server:/tmp/.ICE-unix/2162
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -103,7 +103,7 @@ DISABLE_WAYLAND = 1
 # environment
 VSCODE_CRASH_REPORTER_START_OPTIONS = {"companyName":"Microsoft","productName":"VSCode","submitURL":"appcenter://code?aid=fba07a4d-84bd-4fc8-a125-9640fc8ce171&uid=fc0de737-e076-49a0-82ec-126e0b212673&iid=fc0de737-e076-49a0-82ec-126e0b212673&sid=fc0de737-e076-49a0-82ec-126e0b212673","uploadToServer":true}
 # environment
-INVOCATION_ID = 6d08644193ba4ec194cfbb371d47cc15
+INVOCATION_ID = 015f933232be49b2804610f528ad3c69
 # environment
 GDK_PIXBUF_MODULEDIR = /snap/code/85/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
 # default
@@ -123,11 +123,11 @@ VSCODE_PIPE_LOGGING = true
 # environment
 SNAP_INSTANCE_KEY = 
 # environment
-PWD = /home/lijuyi/桌面/mcts sample
+PWD = /home/lijuyi/桌面/TCG_P5_310551128
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 2027
+SSH_AGENT_PID = 2018
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -179,7 +179,7 @@ SHLVL = 1
 # environment
 GNOME_SHELL_SESSION_MODE = ubuntu
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-f1146545-a491-464a-bfa9-fb684c05bb6b.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-c03c45f8-c954-4195-aee0-f1fc35a54526.sock
 # default
 MAKE_VERSION := 4.2.1
 # environment
@@ -194,6 +194,8 @@ XDG_CURRENT_DESKTOP = Unity
 %D = $(patsubst %/,%,$(dir $%))
 # default
 MAKE_COMMAND := make
+# environment
+OLDPWD = /home/lijuyi/桌面
 # default
 .VARIABLES := 
 # automatic
@@ -233,11 +235,11 @@ LC_ALL = C
 # environment
 GJS_DEBUG_TOPICS = JS ERROR;JS LOG
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/83138b22_4276_49b7_a16b_dc8a3011dbb0
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/f8d3db2f_2994_463d_a288_911254f44c8a
 # automatic
 ^F = $(notdir $^)
 # environment
-GNOME_TERMINAL_SERVICE = :1.2804
+GNOME_TERMINAL_SERVICE = :1.142
 # default
 SUFFIXES := 
 # environment
@@ -257,9 +259,9 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 639758
+VSCODE_PID = 358477
 # variable set hash-table stats:
-# Load=124/1024=12%, Rehash=0, Collisions=16/152=11%
+# Load=125/1024=12%, Rehash=0, Collisions=16/153=10%
 
 # Pattern-specific Variable Values
 
@@ -267,15 +269,15 @@ VSCODE_PID = 639758
 
 # Directories
 
-# . (device 2053, inode 1835041): 11 files, no impossibilities.
+# . (device 2053, inode 1835041): 32 files, no impossibilities.
 
-# 11 files, no impossibilities in 1 directories.
+# 32 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
 # No implicit rules.
-
  
+
 # Files
 
 all:
@@ -304,7 +306,7 @@ all:
 # variable set hash-table stats:
 # Load=8/32=25%, Rehash=0, Collisions=1/11=9%
 #  recipe to execute (from 'makefile', line 2):
-	g++ -std=c++11 -O3 -g -Wall -fmessage-length=0 -o nogo nogo.cpp
+	g++ -std=c++11 -O3 -g -Wall -fmessage-length=0 -pthread -o nogo nogo.cpp
 
 # Not a target:
 .SUFFIXES:
@@ -315,7 +317,7 @@ all:
 # Not a target:
 makefile:
 #  Implicit rule search has been done.
-#  Last modified 2021-11-10 05:27:08
+#  Last modified 2022-01-09 15:50:09.147503751
 #  File has been updated.
 #  Successfully updated.
 
@@ -340,12 +342,12 @@ clean:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 17 / storage = 149 B / avg = 8 B
-# current buf: size = 8162 B / used = 149 B / count = 17 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 38 / storage = 644 B / avg = 16 B
+# current buf: size = 8162 B / used = 644 B / count = 38 / avg = 16 B
 
-# strcache performance: lookups = 25 / hit rate = 32%
+# strcache performance: lookups = 46 / hit rate = 17%
 # hash-table stats:
-# Load=17/8192=0%, Rehash=0, Collisions=1/25=4%
-# Finished Make data base on Fri Jan  7 15:01:46 2022
+# Load=38/8192=0%, Rehash=0, Collisions=1/46=2%
+# Finished Make data base on Thu Jan 13 16:28:46 2022
 
  

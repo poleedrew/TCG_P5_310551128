@@ -76,7 +76,7 @@ protected:
  */
 class player : public random_agent {
 public:
-	player(const std::string& args = "") : random_agent("name=random role=unknown N=0 T=0 thread=0 C=0.3" + args),
+	player(const std::string& args = "") : random_agent("name=random role=unknown N=0 T=0 thread=0 C=1.4" + args),
 		space(board::size_x * board::size_y), who(board::empty) {
 		if (name().find_first_of("[]():; ") != std::string::npos)
 			throw std::invalid_argument("invalid name: " + name());
@@ -113,13 +113,16 @@ public:
 			double start, end;
 			start = clock();
 			end = clock();
+			int number = 0;
 			while(end - start + 10 < T) {
+				number++;
 				std::vector<node*> path = select(exploration);
 				node* leaf = path.back()->expand(engine);
 				if (leaf != path.back()) path.push_back(leaf);
 				update(path, leaf->simulate(engine));
 				end = clock();
 			}
+			std::cout << "number: " << number << std::endl;
 			return take_action();
 		}
 	protected:
@@ -131,8 +134,10 @@ public:
 		std::vector<node*> select(double exploration) {
 			std::vector<node*> path = { this };
 			for (node* ndptr = this; ndptr->is_selectable(); path.push_back(ndptr)) {
-				ndptr = &*std::max_element(ndptr->child.begin(), ndptr->child.end(),
-						[=](const node& lhs, const node& rhs) { return lhs.ucb_score(exploration) < rhs.ucb_score(exploration); });
+				int ps = -1;
+				ps *= psi;
+				ndptr = &*std::max_element(ndptr->child.begin(), ndptr->child.end(),	
+						[=](const node& lhs, const node& rhs) { return lhs.ucb_score(ps, exploration) < rhs.ucb_score(ps, exploration); });
 			}
 			return path;
 		}
@@ -202,10 +207,10 @@ public:
 		/**
 		 * get the ucb score of this node
 		 */
-		float ucb_score(float c = std::sqrt(2)) const {
+		float ucb_score(int ps, float c = std::sqrt(2)) const {
 			float exploit = float(win) / visit;
 			float explore = std::sqrt(std::log(parent->visit) / visit);
-			return exploit + c * explore;
+			return exploit * ps + c * explore;
 		}
 
 		/**
@@ -223,6 +228,7 @@ public:
 		int pos_;
 		std::vector<node> child;
 		node* parent;
+		int psi = -1;
 	};
 
 	virtual action take_action(const board& state) {
@@ -248,29 +254,41 @@ public:
 				
 				std::vector<std::thread> t;
 				std::vector<node> roots(thread_num, state);
-				
 				for(size_t i=0; i < thread_num; i++)
 					t.push_back(std::thread(&node::run_mcts, &roots[i], N, std::ref(engine), C));
 				
 				for(size_t j=0; j < thread_num; j++)
 					t[j].join();
+				
 				std::unordered_map<int, std::pair<int,int>> cal;
 				for(size_t i=0; i < thread_num; i++){
 					for(size_t j=0; j < roots[i].child.size(); j++){
 						int index = roots[i].child[j].pos_;
-						cal[index].first += roots[i].child[j].win;
-						cal[index].second += roots[i].child[j].visit;
+						if(cal.find(index) == cal.end()) {
+							cal[index].first = roots[i].child[j].win;
+							cal[index].second = roots[i].child[j].visit;
+						}else
+						{
+							cal[index].first += roots[i].child[j].win;
+							cal[index].second += roots[i].child[j].visit;
+						}
 					}
 				}
 				auto best = cal.begin();
-				for(auto i = cal.begin(); i != cal.end(); i++){
-					float mean = i->second.first / i->second.second;
-					float b_mean = best->second.first / best->second.second;
-					if(mean > b_mean){
-						best = i;
+				if(best != cal.end()){
+					
+					for(auto i = cal.begin(); i != cal.end(); i++){
+						if(best->second.second < i->second.second){
+							best = i;
+						}
+						// float mean = i->second.second ? i->second.first / i->second.second : i->second.first;
+						// float b_mean = best->second.second ? best->second.first / best->second.second : best->first;
+						// if(mean > b_mean){
+						// 	best = i;
+						// }
 					}
+					return action::place(best->first, this->who);
 				}
-				if(best->first != -1) return action::place(best->first, this->who);
 			}
 			else
 				return node(state).run_mcts(N, engine, C);
@@ -301,18 +319,20 @@ public:
 					}
 				}
 				auto best = cal.begin();
-				for(auto i = cal.begin(); i != cal.end(); i++){
-					if(best->second.second < i->second.second ) best = i;
-					else if(best->second.second == i->second.second){
-						best = best->second.first > i->second.first ? best : i;
+				if(best != cal.end()){
+					
+					for(auto i = cal.begin(); i != cal.end(); i++){
+						// if(best->second.second < i->second.second){
+						// 	best = i;
+						// }
+						float mean = i->second.second ? i->second.first / i->second.second : i->second.second;
+						float b_mean = best->second.second ? best->second.first / best->second.second : best->second.second;
+						if(mean > b_mean){
+							best = i;
+						}
 					}
-					// float mean = i->second.second ? i->second.first / i->second.second : i->second.first;
-					// float b_mean = best->second.second ? best->second.first / best->second.second : best->first;
-					// if(mean > b_mean){
-					// 	best = i;
-					// }
+					return action::place(best->first, this->who);
 				}
-				if(best->first > -1 && best->first < 81 ) return action::place(best->first, this->who);
 			}
 			else
 				return node(state).run_mcts_t(T, engine, C);
